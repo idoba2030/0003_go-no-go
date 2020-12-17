@@ -31,25 +31,25 @@ library(data.table)
 df2$rw_pv            <-shift(df2$rw, n=1, fill=1, type=c("lag"), give.names=FALSE) # was the previous trail rewarded(=1)/unrewarded(=0) 
 df2$trn_pv           <-shift(df2$trn, n=1, fill=1, type=c("lag"), give.names=FALSE) # was previous trails' transition common(=0)/rare(=1)
 df2$stay1           <-(df2$ch1==shift(df2$ch1, n=1, fill=1, type=c("lag"), give.names=FALSE)) #did the agent repeated the same first stage action 
-df2$act_pv           <-shift(df2$act, n=1, fill=1, type=c("lag"), give.names=FALSE) #was the previous trails' action Go(=1)/Nogo(=0)
+df2$go_pv           <-shift(df2$go, n=1, fill=1, type=c("lag"), give.names=FALSE) #was the previous trails' action Go(=1)/Nogo(=0)
 #df2$alpha1_ratio1           <- if(df2$alpha1_ratio>1){}
 
 library(reshape2)
-df3<-dcast(df2,subj  ~ rw_pv+trn_pv+act_pv ,mean, value.var = c('stay1'))
+df3<-dcast(df2,subj  ~ rw_pv+trn_pv ,mean, value.var = c('stay1'))
 apply(df3, 2, function(x) any(is.na(x)))
 df3[(is.na(df3))]<- 0 
 
-mb1_go=((df3$`1_0_1`-df3$`1_1_1`)-(df3$`0_0_1`-df3$`0_1_1`)) #interaction effect for Go action
+mb1_go=((df3$`1_0`-df3$`1_1`)-(df3$`0_0`-df3$`0_1`)) #interaction effect for Go action
 plot(x[,'w'],mb1_go)
 cor(x[,'w'],mb1_go)
-mf1_go=((df3$`1_0_1`+df3$`1_1_1`)-(df3$`0_0_1`+df3$`0_1_1`)) #main effect for Go action
+mf1_go=((df3$`1_0`+df3$`1_1`)-(df3$`0_0`+df3$`0_1`)) #main effect for Go action
 plot(x[,'w'],mf1_go)
 cor(x[,'w'],mf1_go)
 
-mb1_ng=((df3$`1_0_0`-df3$`1_1_0`)-(df3$`0_0_0`-df3$`0_1_0`)) #interaction effect for Nogo action
+mb1_ng=((df3$`1_0`-df3$`1_1`)-(df3$`0_0`-df3$`0_1`)) #interaction effect for Nogo action
 plot(x[,'w'],mb1_ng)
 cor(x[,'w'],mb1_ng)
-mf1_ng=((df3$`1_0_0`+df3$`1_1_0`)-(df3$`0_0_0`+df3$`0_1_0`)) #main effect for Nogo action
+mf1_ng=((df3$`1_0`+df3$`1_1`)-(df3$`0_0`+df3$`0_1`)) #main effect for Nogo action
 plot(x[,'w'],mf1_ng)
 cor(x[,'w'],mf1_ng)
 
@@ -95,4 +95,5 @@ y2<-data.frame(
 
 
 cor(x,y2)
+diag(cor(x,y2))
 mean(diag(cor(x,y2)))
