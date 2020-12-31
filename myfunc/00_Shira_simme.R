@@ -4,7 +4,7 @@ Shira_simme<-function(x,rndwlk,subj,experiment,Ntrls) {
   
   # set up the models' parameters - 10 free parameters (α_go, α_ng, α2, β1, β2, λ, w, p_obj, p_act, go_bias)
   alpha_go       =x[1] 
-  alpha_ratio    =x[2]
+  alpha1_ratio    =x[2]
   #alpha_ng       = 0.00000001
   alpha2         =x[3]
   beta1          =x[4]
@@ -25,7 +25,7 @@ Shira_simme<-function(x,rndwlk,subj,experiment,Ntrls) {
       Qmb=Qnet       =c(0,0)
       perCh1         =c(0,0)    #repeating the same first stage choice
       stmat          =rbind(c(2,3),c(3,2)) #state transition map
-      alpha1         =rbind(c(alpha_go,alpha_ratio*alpha_go),c(alpha_ratio*alpha_go,alpha_go))
+      alpha1         =rbind(c(alpha_go,alpha1_ratio*alpha_go),c(alpha1_ratio*alpha_go,alpha_go))
       perAct         =rbind(c(0,0),c(0,0))    #repeating the same action go | nogo
       go_bias1       =rbind(c(go_bias,0),c(0,go_bias)) #bias toward a Go action 
       }  
@@ -97,7 +97,7 @@ Shira_simme<-function(x,rndwlk,subj,experiment,Ntrls) {
       trn  =trn,
       map = map,
       go  = go,
-      alpha1_ratio = alpha_go/alpha_ng
+      alpha1_ratio = alpha1_ratio
 #neglected r101-104
              ))
   }
