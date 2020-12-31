@@ -8,7 +8,7 @@ source('myfunc/00_gong_null_functions.R')
 #### Simulate data ----
 
 rndwlk=readMat('myfiles/nspn_rndwlk_frcXstateXtrlXcounter.mat')[[1]]
-Nsubj=1*2
+Nsubj=10*2
 Nexp =10
 Ntrls=200
 
@@ -20,11 +20,6 @@ x<-do.call(rbind,x)
 
 #simulate data
 source('myfunc/00_gong_null_simme.R')
-
-df<- 
-  for(i in 1:Nsubj){
-         gong_null_simme(x,rndwlk,i,1,Ntrls)
-     }
 
 df<-
   mclapply(1:Nsubj,function(s) {
@@ -44,7 +39,7 @@ df2$go2st_pv           <-shift(df2$go2st, n=1, fill=1, type=c("lag"), give.names
 #df2$alpha1_ratio1           <- if(df2$alpha1_ratio>1){}
 
 library(reshape2)
-df3<-dcast(df2,subj  ~ rw_pv+go2st_pv ,mean, value.var = c('stay2'))
+df3<-dcast(df2,subj  ~ rw_pv+go2st_pv+go1st_pv,mean, value.var = c('stay1'))
 apply(df3, 2, function(x) any(is.na(x)))
 df3[(is.na(df3))]<- 0 
 

@@ -50,7 +50,7 @@ gong_null_simme<-function(x,rndwlk,subj,experiment,Ntrls) {
     ch2 =sample(1:2,size=1,prob=c(p2[1],p2[2]))
     
     #generate outcome
-    rw.prob=rndwlk[ch2,(state-1),t,1]
+    rw.prob=rndwlk[ch2,(state-1),t]
     rw     =sample(c(-1,1),size=1,prob=c(1-rw.prob,rw.prob)) # reward =1  
     
     #update fractal model-free Qvalues
