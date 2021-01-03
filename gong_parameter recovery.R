@@ -36,18 +36,32 @@ df2$stay1           <-(df2$ch1==shift(df2$ch1, n=1, fill=1, type=c("lag"), give.
 df2$stay2           <-(df2$ch2==shift(df2$ch2, n=1, fill=1, type=c("lag"), give.names=FALSE)) #did the agent repeated the same second stage action 
 df2$go1st_pv           <-shift(df2$go1st, n=1, fill=1, type=c("lag"), give.names=FALSE) #was the previous trails' first stage action type Go(=1)/Nogo(=0)
 df2$go2st_pv           <-shift(df2$go2st, n=1, fill=1, type=c("lag"), give.names=FALSE) #was the previous trails' first stage action type Go(=1)/Nogo(=0)
-#df2$alpha1_ratio1           <- if(df2$alpha1_ratio>1){}
 
 library(reshape2)
-df3<-dcast(df2,subj  ~ rw_pv+go2st_pv+go1st_pv,mean, value.var = c('stay1'))
-apply(df3, 2, function(x) any(is.na(x)))
-df3[(is.na(df3))]<- 0 
+df3<-dcast(df2,subj  ~ rw_pv+go1st_pv+go2st_pv,mean, value.var = c('stay1'))
+apply(df3, 2, function(x) any(is.na(x))) #are there ant NA cells 
+df3[(is.na(df3))]<- 0 #converet them to 0
 
-ME=((df3$`-1_0`+df3$`-1_1`)-(df3$`1_0`+df3$`1_1`))
+df4<-colMeans(df3)
+df4
+mean(df4[2:9])
+ME_p1_a1 = mean((df3$`1_1_1`+df3$`1_1_0`)-(df3$`1_0_1`+df3$`1_0_0`)) #first main effect: first stage stay probability for rewarded previous trail in the first stage action condition   
+ME_m1_a1 = mean((df3$`-1_1_1`+df3$`-1_1_0`)-(df3$`-1_0_1`+df3$`-1_0_0`)) #first main effect: first stage stay probability for avoiding punishment at the previous trail in first stage action condition   
+ME_p1_a2 = mean((df3$`1_1_1`+df3$`1_0_1`)-(df3$`1_1_0`+df3$`1_0_0`)) #second main effect: first stage stay probability for rewarded previous trail in the second stage action condition   
+ME_m1_a2 = mean((df3$`-1_1_1`+df3$`-1_0_1`)-(df3$`-1_1_0`+df3$`-1_0_0`)) #second main effect: first stage stay probability for avoiding punishment at the previous trail in the second stage action condition   
+
+df5 = data.frame(row.names = c("action_1","action_2"))
+colnames(df5)<-c("reward","punishment")
+df5[1,1] = ME_p1_a1
+df5[1,2] = ME_m1_a1
+df5[2,1] = ME_p1_a2
+df5[2,2] = ME_m1_a2
+
+
+
+ME_p1_go1_go2=((df3$`1_1_1`+df3$`-1_1`)-(df3$`1_0`+df3$`1_1`))
 plot(x[,'w'],mf1_go)
 cor(x[,'w'],mf1_go)
-
-
 mb1_go=((df3$`1_0`-df3$`1_1`)-(df3$`0_0`-df3$`0_1`)) #interaction effect for Go action
 plot(x[,'w'],mb1_go)
 cor(x[,'w'],mb1_go)
