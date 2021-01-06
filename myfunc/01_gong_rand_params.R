@@ -3,13 +3,13 @@
 rand_params<-function(){
   x=
     c(
-      alpha1       =runif(1),
+      alpha1         =runif(1),
       gamma1         =runif(1),
       gamma2         =runif(1),
       beta1          =runif(1,min=0.1,max=10),
       lambda         =runif(1),
       persv          =runif(1,min=-0.5,max=0.5),
-      go_bias        =runif(1,min=-1,max=1))
+      go_bias        =runif(1,min=-0.5,max=0.5))
 
   return(x)}
 
