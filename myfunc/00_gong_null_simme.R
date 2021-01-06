@@ -86,8 +86,8 @@ gong_null_simme<-function(x,rndwlk,subj,experiment,Ntrls) {
                rw   =rw,
                map1 = map1,
                map2 = map2,
-               go1st = go1,
-               go2st = go2
+               act1 = go1,
+               act2 = go2
              ))
   }
   return(df)
