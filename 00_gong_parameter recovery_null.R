@@ -8,7 +8,7 @@ source('myfunc/00_gong_null_functions.R')
 #### Simulate data ----
 
 rndwlk=readMat('myfiles/nspn_rndwlk_frcXstateXtrlXcounter.mat')[[1]]
-Nsubj=10*2
+Nsubj=50*2
 Nexp =10
 Ntrls=200
 
@@ -41,40 +41,71 @@ library(reshape2)
 df3<-dcast(df2,subj  ~ rw_pv+go1st_pv+go2st_pv,mean, value.var = c('stay1'))
 apply(df3, 2, function(x) any(is.na(x))) #are there ant NA cells 
 df3[(is.na(df3))]<- 0 #converet them to 0
+df3
 
 df4<-colMeans(df3)
 df4
+plot(df4[2:9])
 mean(df4[2:9])
-ME_p1_a1 = mean((df3$`1_1_1`+df3$`1_1_0`)-(df3$`1_0_1`+df3$`1_0_0`)) #first main effect: first stage stay probability for rewarded previous trail in the first stage action condition   
-ME_m1_a1 = mean((df3$`-1_1_1`+df3$`-1_1_0`)-(df3$`-1_0_1`+df3$`-1_0_0`)) #first main effect: first stage stay probability for avoiding punishment at the previous trail in first stage action condition   
-ME_p1_a2 = mean((df3$`1_1_1`+df3$`1_0_1`)-(df3$`1_1_0`+df3$`1_0_0`)) #second main effect: first stage stay probability for rewarded previous trail in the second stage action condition   
-ME_m1_a2 = mean((df3$`-1_1_1`+df3$`-1_0_1`)-(df3$`-1_1_0`+df3$`-1_0_0`)) #second main effect: first stage stay probability for avoiding punishment at the previous trail in the second stage action condition   
 
-df5 = data.frame(row.names = c("action_1","action_2"))
-colnames(df5)<-c("reward","punishment")
-df5[1,1] = ME_p1_a1
-df5[1,2] = ME_m1_a1
-df5[2,1] = ME_p1_a2
-df5[2,2] = ME_m1_a2
+df51_p =data.frame(row.names = c("action_2_go","action_2_nogo","1st_MA"))
+df51_p[1,1] = mean(df3$`-1_1_1`)
+df51_p[1,2] = mean(df3$`-1_0_1`)
+df51_p[2,1] = mean(df3$`-1_1_0`)
+df51_p[2,2] = mean(df3$`-1_0_0`)
+df51_p[3,1] = mean(c(df51_p[1,1],df51_p[2,1])) 
+df51_p[3,2] = mean(c(df51_p[1,2],df51_p[2,2]))
+df51_p[1,3] = mean(c(df51_p[1,1],df51_p[1,2]))
+df51_p[2,3] = mean(c(df51_p[2,1],df51_p[2,2]))
+colnames(df51_p)<-c("action_1_go","action_1_nogo","2nd_MA")
+
+df51_r =data.frame(row.names = c("action_2_go","action_2_nogo","1st_MA"))
+df51_r[1,1] = mean(df3$`1_1_1`)
+df51_r[1,2] = mean(df3$`1_0_1`)
+df51_r[2,1] = mean(df3$`1_1_0`)
+df51_r[2,2] = mean(df3$`1_0_0`)
+df51_r[3,1] = mean(c(df51_r[1,1],df51_r[2,1])) 
+df51_r[3,2] = mean(c(df51_r[1,2],df51_r[2,2]))
+df51_r[1,3] = mean(c(df51_r[1,1],df51_r[1,2]))
+df51_r[2,3] = mean(c(df51_r[2,1],df51_r[2,2]))
+colnames(df51_r)<-c("action_1_go","action_1_nogo","2nd_MA")
+
+ME_act_s1_p = df51_p[1,3] - df51_p[2,3]
+ME_act_s2_p = df51_p[3,1] - df51_p[3,2]
+ME_act_s1_r = df51_r[1,3] - df51_r[2,3]
+ME_act_s2_r = df51_r[3,1] - df51_r[3,2]
+
+paste("ME_act_s2_r = ",ME_act_s2_r,"ME_act_s1_r = ",ME_act_s1_r)
+paste("ME_act_s2_p = ",ME_act_s2_p,"ME_act_s1_p = ",ME_act_s1_p)
 
 
+df6<-dcast(df2,subj  ~ go1st_pv+go2st_pv,mean, value.var = c('stay1'))
+apply(df6, 2, function(x) any(is.na(x))) #are there any NA cells 
 
-ME_p1_go1_go2=((df3$`1_1_1`+df3$`-1_1`)-(df3$`1_0`+df3$`1_1`))
-plot(x[,'w'],mf1_go)
-cor(x[,'w'],mf1_go)
-mb1_go=((df3$`1_0`-df3$`1_1`)-(df3$`0_0`-df3$`0_1`)) #interaction effect for Go action
-plot(x[,'w'],mb1_go)
-cor(x[,'w'],mb1_go)
-mf1_go=((df3$`1_0`+df3$`1_1`)-(df3$`0_0`+df3$`0_1`)) #main effect for Go action
-plot(x[,'w'],mf1_go)
-cor(x[,'w'],mf1_go)
+df61 =data.frame(row.names = c("action_2_go","action_2_nogo","1st_MA"))
+df61[1,1] = mean(df6$`1_1`)
+df61[1,2] = mean(df6$`0_1`)
+df61[2,1] = mean(df6$`1_0`)
+df61[2,2] = mean(df6$`0_0`)
+df61[3,1] = mean(c(df61[1,1],df61[2,1])) 
+df61[3,2] = mean(c(df61[1,2],df61[2,2]))
+df61[1,3] = mean(c(df61[1,1],df61[1,2]))
+df61[2,3] = mean(c(df61[2,1],df61[2,2]))
+colnames(df61)<-c("action_1_go","action_1_nogo","2nd_MA")
 
-mb1_ng=((df3$`1_0`-df3$`1_1`)-(df3$`0_0`-df3$`0_1`)) #interaction effect for Nogo action
-plot(x[,'w'],mb1_ng)
-cor(x[,'w'],mb1_ng)
-mf1_ng=((df3$`1_0`+df3$`1_1`)-(df3$`0_0`+df3$`0_1`)) #main effect for Nogo action
-plot(x[,'w'],mf1_ng)
-cor(x[,'w'],mf1_ng)
+ME_act_s1 = df61[1,3] - df61[2,3]
+ME_act_s2 = df61[3,1] - df61[3,2]
+paste("ME_act_s2 = ",ME_act_s2,"ME_act_s1 = ",ME_act_s1)
+
+model = lm(stay1 ~ go1st_pv+go2st_pv,
+           data = df2)
+
+library(car)
+
+Anova(model,
+      type = "II")
+
+
 
 ###fit model----
 library(parallel)
