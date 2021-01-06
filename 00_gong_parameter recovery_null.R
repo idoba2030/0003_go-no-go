@@ -8,7 +8,7 @@ source('myfunc/00_gong_null_functions.R')
 #### Simulate data ----
 
 rndwlk=readMat('myfiles/nspn_rndwlk_frcXstateXtrlXcounter.mat')[[1]]
-Nsubj=50*2
+Nsubj=10*2
 Nexp =10
 Ntrls=200
 
@@ -29,16 +29,21 @@ df<-
 
 
 ####model agnostic
+apply(df[[3]], 2, function(x) any(is.na(x))) #are there ant NA cells 
+
 df2<-do.call(rbind,df)
+apply(df2, 2, function(x) any(is.na(x))) #are there ant NA cells 
+
 library(data.table)
 df2$rw_pv            <-shift(df2$rw, n=1, fill=1, type=c("lag"), give.names=FALSE) # was the previous trail rewarded(=1)/unrewarded(=0) 
 df2$stay1           <-(df2$ch1==shift(df2$ch1, n=1, fill=1, type=c("lag"), give.names=FALSE)) #did the agent repeated the same first stage action 
+#df2$change1           <-(df2$ch1=!shift(df2$ch1, n=1, fill=1, type=c("lag"), give.names=FALSE)) #did the agent changed his first stage action 
 df2$stay2           <-(df2$ch2==shift(df2$ch2, n=1, fill=1, type=c("lag"), give.names=FALSE)) #did the agent repeated the same second stage action 
-df2$go1st_pv           <-shift(df2$go1st, n=1, fill=1, type=c("lag"), give.names=FALSE) #was the previous trails' first stage action type Go(=1)/Nogo(=0)
-df2$go2st_pv           <-shift(df2$go2st, n=1, fill=1, type=c("lag"), give.names=FALSE) #was the previous trails' first stage action type Go(=1)/Nogo(=0)
+df2$act1_pv           <-shift(df2$act1, n=1, fill=1, type=c("lag"), give.names=FALSE) #was the previous trails' first stage action type Go(=1)/Nogo(=0)
+df2$act2_pv           <-shift(df2$act2, n=1, fill=1, type=c("lag"), give.names=FALSE) #was the previous trails' first stage action type Go(=1)/Nogo(=0)
 
 library(reshape2)
-df3<-dcast(df2,subj  ~ rw_pv+go1st_pv+go2st_pv,mean, value.var = c('stay1'))
+df3<-dcast(df2,subj  ~ rw_pv+act1_pv+act2_pv,mean, value.var = c('stay1'))
 apply(df3, 2, function(x) any(is.na(x))) #are there ant NA cells 
 df3[(is.na(df3))]<- 0 #converet them to 0
 df3
@@ -79,7 +84,7 @@ paste("ME_act_s2_r = ",ME_act_s2_r,"ME_act_s1_r = ",ME_act_s1_r)
 paste("ME_act_s2_p = ",ME_act_s2_p,"ME_act_s1_p = ",ME_act_s1_p)
 
 
-df6<-dcast(df2,subj  ~ go1st_pv+go2st_pv,mean, value.var = c('stay1'))
+df6<-dcast(df2,subj  ~ act1_pv+act2_pv,mean, value.var = c('stay1'))
 apply(df6, 2, function(x) any(is.na(x))) #are there any NA cells 
 
 df61 =data.frame(row.names = c("action_2_go","action_2_nogo","1st_MA"))
@@ -97,10 +102,11 @@ ME_act_s1 = df61[1,3] - df61[2,3]
 ME_act_s2 = df61[3,1] - df61[3,2]
 paste("ME_act_s2 = ",ME_act_s2,"ME_act_s1 = ",ME_act_s1)
 
-model = lm(stay1 ~ go1st_pv+go2st_pv,
-           data = df2)
+
 
 library(car)
+model = lm(stay1 ~ go1st_pv+go2st_pv,
+           data = df2)
 
 Anova(model,
       type = "II")
