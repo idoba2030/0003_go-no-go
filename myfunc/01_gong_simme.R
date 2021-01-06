@@ -3,7 +3,8 @@
 gong_simme<-function(x,rndwlk,subj,experiment,Ntrls) {
   
   # set up the models' parameters - 6 free parameters (α1, α2, β1, λ, pers, go_bias)
-  alpha1         =x[1] 
+  alpha1         =x[1]
+  alpha2         =x[1]
   gamma1         =x[2]
   gamma2         =x[3]
   beta1          =x[4]
@@ -19,22 +20,21 @@ gong_simme<-function(x,rndwlk,subj,experiment,Ntrls) {
       #pre allocate vars
       Qval           =matrix(0,3,2) #state (3) x fractal at each state (2)
       Qnet           =c(0,0)
-      perCh          =matrix(0,3,2)    #repeating the same choice (state X fractal)
-      perAct1        =matrix(0,2,2)    #repeating the same action at stage1 (mapping options X fractal)
-      perAct2        =matrix(0,2,2)    #repeating the same action at stage1 (mapping options X fractal)
+      perCh          =c(0,0)       #repeating the same choice (state X fractal)
+      perResp         =c(0,0)    #repeating the same action at stage1 (mapping options X fractal)
       stmat          =c(2,3) #state transition map
-      go_bias        =rbind(c(go_b,0),c(0,go_b)) #bias toward a Go action in each state 
+      go_bias        =c(go_b,0) #bias toward a Go action in each state 
      # gammas         =rbind(c(1,gamma2),c(gamma1,gamma1*gamma2)) #discounting factors for the learning rate (alpha). first row is for go at the first stage, first column is for go at the second stage :[(go1go2,go1ng2),(ng1go2,ng1ng2)] 
-      gammas         =rbind(c(1,0.1),c(0.1,0.001)) #discounting factors for the learning rate (alpha). first row is for go at the first stage, first column is for go at the second stage :[(go1go2,go1ng2),(ng1go2,ng1ng2)] 
-      
+      gamma2         =c(1,gamma2)
+      gamma1         =c(1,gamma1)
        }  
     
     # Mapping first stage actions (Go/Nogo) to choices 
     map1       = sample(1:2,size=1) # assigning Go to a1 or a2 at state1 stage1 : map =1 -> a1=Go
     
     # make a first stage choice
-    Qnet[1]= Qval[1,1] +persv*perCh[1,1]+persv*perAct1[map1,1]+go_bias[map1,1]
-    Qnet[2]= Qval[1,2] +persv*perCh[1,2]+persv*perAct1[map1,2]+go_bias[map1,2]
+    Qnet[1]= Qval[1,1] +persv*perCh[1]+persv*perResp[map1]+go_bias[map1]
+    Qnet[2]= Qval[1,2] +persv*perCh[2]+persv*perResp[3-map1]+go_bias[3-map1]
     
     #softmax first choice
     p1  =exp(beta1*Qnet)/sum(exp(beta1*Qnet)) #Qnet[1]? #p1 = probability for action1 at state1 
@@ -43,45 +43,38 @@ gong_simme<-function(x,rndwlk,subj,experiment,Ntrls) {
     # make transition
     state=stmat[ch1]
 
+    perResp = c((map1==ch1)*1,(map1!=ch1)*1)
+
     # Mapping second stage actions (Go/Nogo) to choices 
     map2       = sample(1:2,size=1) # assigning Go to a1 or a2 for the chosen state at stage2 : map =1 -> a1=Go
     
     # second stage choice
-    Qnet[1]= Qval[state,1] +persv*perAct2[map2,1] +go_bias[map2,1]
-    Qnet[2]= Qval[state,2] +persv*perAct2[map2,2] +go_bias[map2,2]
+    Qnet[1]= Qval[state,1] +persv*perResp[map2] +go_bias[map2]
+    Qnet[2]= Qval[state,2] +persv*perResp[3-map2] +go_bias[3-map2]
     
     p2  =exp(beta1*Qnet)/sum(exp(beta1*Qnet))
     ch2 =sample(1:2,size=1,prob=c(p2[1],p2[2]))
     
+    perResp = c((map2==ch2)*1,(map2!=ch2)*1)
+    
     #generate outcome
-    rw.prob=rndwlk[ch2,(state-1),t]
-    rw     =sample(c(-1,1),size=1,prob=c(1-rw.prob,rw.prob)) # reward =1  
+    rw.prob=rndwlk[t,ch2+(state-2)*2]
+    rw     =sample(c(0,1),size=1,prob=c(1-rw.prob,rw.prob)) # reward =1  
     
     #update choices model-free Qvalues
     PE1=(Qval[state,ch2]-Qval[1,ch1])
     PE2=(rw-Qval[state,ch2])
     
     #assigning the alphas for the choices (a go or no-go affiliated)  
-    act1 = 2-(map1 == ch1)*1 #Go = 1  
-    act2 = 2-(map2 == ch2)*1 
+    resp1 = 2-(map1 == ch1)*1 #Go = 1, Nogo = 2 
+    resp2 = 2-(map2 == ch2)*1 
     
-    
-    Qval[1,ch1]    =Qval[1,ch1]+alpha1*gammas[act2,act1]*PE1+alpha1*gammas[act2,act1]*lambda*PE2
-    Qval[state,ch2]=Qval[state,ch2]+alpha1*gammas[act2,1]*PE2
+    Qval[1,ch1]    =Qval[1,ch1]+alpha1*gamma1[resp1]*gamma2[resp2]*PE1+alpha1*gamma1[resp1]*gamma2[resp2]*lambda*PE2
+    Qval[state,ch2]=Qval[state,ch2]+alpha2*gamma2[resp2]*PE2
     
     #update choice perservation parameter
-    perCh [1,ch1]     =1
-    perCh [1,3-ch1]   =0
-
-    #update action perservation parameter
-    # 1st stage
-    go1 = (map1 == ch1)*1 #Go = 1  
-    ng1 = 1-go1
-    perAct1    =rbind(c(go1,ng1),c(ng1,go1))
-    # 2nd stage
-    go2 = (map2 == ch2)*1 
-    ng2 = 1-go2
-    perAct2    =rbind(c(go2,ng2),c(ng2,go2))
+    perCh [ch1]     =1
+    perCh [3-ch1]   =0
     
     #save data
     df=rbind(df,
@@ -95,8 +88,8 @@ gong_simme<-function(x,rndwlk,subj,experiment,Ntrls) {
                rw   =rw,
                map1 = map1,
                map2 = map2,
-               act1 = go1,
-               act2 = go2
+               resp1 = resp1,
+               resp2 = resp2
              ))
   }
   return(df)
