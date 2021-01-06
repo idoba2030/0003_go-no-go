@@ -8,9 +8,10 @@ source('myfunc/01_gong_functions.R')
 #### Simulate data ----
 
 rndwlk=readMat('myfiles/nspn_rndwlk_frcXstateXtrlXcounter.mat')[[1]]
-Nsubj=10*2
-Nexp =10
-Ntrls=200
+rndwlk=read.csv('rndwlk_v1.csv')
+Nsubj=50*2
+Nexp =2
+Ntrls=1000
 
 #simulate parameters
 source('myfunc/01_gong_rand_params.R')
@@ -22,65 +23,102 @@ x<-do.call(rbind,x)
 source('myfunc/01_gong_simme.R')
 
 df<-
-  mclapply(1:Nsubj,function(s) {
-    sngdf   <-lapply(1:Nexp, function(experiment) {gong_simme(x[s,],rndwlk=rndwlk[,,,sample(1:2,size=1)],subj=s,experiment,Ntrls)})
-    sngdf   <-do.call(rbind,sngdf)}
-    ,mc.cores =2)
+  lapply(1:Nsubj,function(s) {
+    sngdf   <-lapply(1:Nexp, function(experiment) {gong_simme(x[s,],rndwlk=rndwlk[,,],subj=s,experiment,Ntrls)})
+    sngdf   <-do.call(rbind,sngdf)})
+#    ,mc.cores =2)
 
 
 ####model agnostic
+apply(df[[2]], 2, function(x) any(is.na(x))) #are there ant NA cells 
+
 df2<-do.call(rbind,df)
+apply(df2, 2, function(x) any(is.na(x))) #are there ant NA cells 
+
 library(data.table)
+library(dplyr)
+library(tidyr)
+
+df2%>%
+  mutate(rw_pv=lag(rw))
 df2$rw_pv            <-shift(df2$rw, n=1, fill=1, type=c("lag"), give.names=FALSE) # was the previous trail rewarded(=1)/unrewarded(=0) 
 df2$stay1           <-(df2$ch1==shift(df2$ch1, n=1, fill=1, type=c("lag"), give.names=FALSE)) #did the agent repeated the same first stage action 
+#df2$change1           <-(df2$ch1=!shift(df2$ch1, n=1, fill=1, type=c("lag"), give.names=FALSE)) #did the agent changed his first stage action 
 df2$stay2           <-(df2$ch2==shift(df2$ch2, n=1, fill=1, type=c("lag"), give.names=FALSE)) #did the agent repeated the same second stage action 
-df2$act1_pv           <-shift(df2$act1, n=1, fill=1, type=c("lag"), give.names=FALSE) #was the previous trails' first stage action type Go(=1)/Nogo(=0)
-df2$act2_pv           <-shift(df2$act2, n=1, fill=1, type=c("lag"), give.names=FALSE) #was the previous trails' first stage action type Go(=1)/Nogo(=0)
+df2$resp1_pv           <-shift(df2$resp1, n=1, fill=1, type=c("lag"), give.names=FALSE) #was the previous trails' first stage action type Go(=1)/Nogo(=0)
+df2$resp2_pv           <-shift(df2$resp2, n=1, fill=1, type=c("lag"), give.names=FALSE) #was the previous trails' first stage action type Go(=1)/Nogo(=0)
+
+df<-
+df2%>%
+  filter(trl>1)%>%
+  group_by(subj,rw)%>%
+  summarise(pStay=mean(stay1))%>%
+  spread(rw,pStay)
+
 
 library(reshape2)
-df3<-dcast(df2,subj  ~ rw_pv+act1_pv+act2_pv,mean, value.var = c('stay1'))
+df3<-dcast(df2,subj  ~ rw_pv+resp1_pv+resp2_pv,mean, value.var = c('stay1'))
 apply(df3, 2, function(x) any(is.na(x))) #are there ant NA cells 
 df3[(is.na(df3))]<- 0 #converet them to 0
+df3
 
 df4<-colMeans(df3)
 df4
+plot(df4[2:9])
 mean(df4[2:9])
-ME_p1_a1 = mean((df3$`1_1_1`+df3$`1_1_0`)-(df3$`1_0_1`+df3$`1_0_0`)) #first main effect: first stage stay probability for rewarded previous trail in the first stage action condition   
-ME_m1_a1 = mean((df3$`-1_1_1`+df3$`-1_1_0`)-(df3$`-1_0_1`+df3$`-1_0_0`)) #first main effect: first stage stay probability for avoiding punishment at the previous trail in first stage action condition   
-ME_p1_a2 = mean((df3$`1_1_1`+df3$`1_0_1`)-(df3$`1_1_0`+df3$`1_0_0`)) #second main effect: first stage stay probability for rewarded previous trail in the second stage action condition   
-ME_m1_a2 = mean((df3$`-1_1_1`+df3$`-1_0_1`)-(df3$`-1_1_0`+df3$`-1_0_0`)) #second main effect: first stage stay probability for avoiding punishment at the previous trail in the second stage action condition   
 
-df5 = data.frame(row.names = c("action_1","action_2"))
-df5[1,1] = ME_p1_a1
-df5[1,2] = ME_m1_a1
-df5[2,1] = ME_p1_a2
-df5[2,2] = ME_m1_a2
-colnames(df5)<-c("reward","punishment")
+##################################################
+df51_p =data.frame(row.names = c("action_2_go","action_2_nogo","1st_MA"))
+df51_p[1,1] = mean(df3$`-1_1_1`)
+df51_p[1,2] = mean(df3$`-1_0_1`)
+df51_p[2,1] = mean(df3$`-1_1_0`)
+df51_p[2,2] = mean(df3$`-1_0_0`)
+df51_p[3,1] = mean(c(df51_p[1,1],df51_p[2,1])) 
+df51_p[3,2] = mean(c(df51_p[1,2],df51_p[2,2]))
+df51_p[1,3] = mean(c(df51_p[1,1],df51_p[1,2]))
+df51_p[2,3] = mean(c(df51_p[2,1],df51_p[2,2]))
+colnames(df51_p)<-c("action_1_go","action_1_nogo","2nd_MA")
 
-df6<-dcast(df2,subj  ~ act1_pv+act2_pv,mean, value.var = c('stay1'))
-ME_a1 = mean((df6$`1_1`+df6$`1_0`)-(df6$`0_1`+df6$`0_0`)) #first main effect: first stage stay probability for the first stage action condition   
-ME_a2 = mean((df6$`1_1`+df6$`0_1`)-(df6$`1_0`+df6$`0_0`)) #second main effect: first stage stay probability for the second stage action condition   
-df7 = data.frame()
-df7[1,1] = ME_a1
-df7[1,2] = ME_a2
-colnames(df7)<-c("action_1","action_2")
+df51_r =data.frame(row.names = c("action_2_go","action_2_nogo","1st_MA"))
+df51_r[1,1] = mean(df3$`1_1_1`)
+df51_r[1,2] = mean(df3$`1_0_1`)
+df51_r[2,1] = mean(df3$`1_1_0`)
+df51_r[2,2] = mean(df3$`1_0_0`)
+df51_r[3,1] = mean(c(df51_r[1,1],df51_r[2,1])) 
+df51_r[3,2] = mean(c(df51_r[1,2],df51_r[2,2]))
+df51_r[1,3] = mean(c(df51_r[1,1],df51_r[1,2]))
+df51_r[2,3] = mean(c(df51_r[2,1],df51_r[2,2]))
+colnames(df51_r)<-c("action_1_go","action_1_nogo","2nd_MA")
 
-ME_p1_go1_go2=((df3$`1_1_1`+df3$`-1_1`)-(df3$`1_0`+df3$`1_1`))
-plot(x[,'w'],mf1_go)
-cor(x[,'w'],mf1_go)
-mb1_go=((df3$`1_0`-df3$`1_1`)-(df3$`0_0`-df3$`0_1`)) #interaction effect for Go action
-plot(x[,'w'],mb1_go)
-cor(x[,'w'],mb1_go)
-mf1_go=((df3$`1_0`+df3$`1_1`)-(df3$`0_0`+df3$`0_1`)) #main effect for Go action
-plot(x[,'w'],mf1_go)
-cor(x[,'w'],mf1_go)
+ME_act_s2_p = df51_p[1,3] - df51_p[2,3]
+ME_act_s1_p = df51_p[3,1] - df51_p[3,2]
+ME_act_s2_r = df51_r[1,3] - df51_r[2,3]
+ME_act_s1_r = df51_r[3,1] - df51_r[3,2]
 
-mb1_ng=((df3$`1_0`-df3$`1_1`)-(df3$`0_0`-df3$`0_1`)) #interaction effect for Nogo action
-plot(x[,'w'],mb1_ng)
-cor(x[,'w'],mb1_ng)
-mf1_ng=((df3$`1_0`+df3$`1_1`)-(df3$`0_0`+df3$`0_1`)) #main effect for Nogo action
-plot(x[,'w'],mf1_ng)
-cor(x[,'w'],mf1_ng)
+paste("ME_act_s2_r = ",ME_act_s2_r,"ME_act_s1_r = ",ME_act_s1_r)
+paste("ME_act_s2_p = ",ME_act_s2_p,"ME_act_s1_p = ",ME_act_s1_p)
+
+
+df6<-dcast(df2,subj  ~ act1_pv+resp2_pv,mean, value.var = c('stay1'))
+apply(df6, 2, function(x) any(is.na(x))) #are there any NA cells 
+
+df61 =data.frame(row.names = c("action_2_go","action_2_nogo","1st_MA"))
+df61[1,1] = mean(df6$`1_1`)
+df61[1,2] = mean(df6$`0_1`)
+df61[2,1] = mean(df6$`1_0`)
+df61[2,2] = mean(df6$`0_0`)
+df61[3,1] = mean(c(df61[1,1],df61[2,1])) 
+df61[3,2] = mean(c(df61[1,2],df61[2,2]))
+df61[1,3] = mean(c(df61[1,1],df61[1,2]))
+df61[2,3] = mean(c(df61[2,1],df61[2,2]))
+colnames(df61)<-c("action_1_go","action_1_nogo","2nd_MA")
+
+ME_act_s1 = df61[3,1] - df61[3,2]
+ME_act_s2 = df61[1,3] - df61[2,3]
+paste("ME_act_s2 = ",ME_act_s2,"ME_act_s1 = ",ME_act_s1)
+
+df61
+plot(c(df61[1,3],df61[2,3],df61[3,1],df61[3,2]))
 
 ###fit model----
 library(parallel)
