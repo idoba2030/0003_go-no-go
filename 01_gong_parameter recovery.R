@@ -3,24 +3,24 @@ library(parallel)
 
 rm(list=ls())
 detectCores()
-source('myfunc/01_gong_functions.R')
+source('01_functions/01_gong_functions.R')
 
 #### Simulate data ----
 
-rndwlk=readMat('myfiles/nspn_rndwlk_frcXstateXtrlXcounter.mat')[[1]]
+#rndwlk=readMat('myfiles/nspn_rndwlk_frcXstateXtrlXcounter.mat')[[1]]
 rndwlk=read.csv('rndwlk_v1.csv')
 Nsubj=50*2
 Nexp =2
 Ntrls=1000
 
 #simulate parameters
-source('myfunc/01_gong_rand_params.R')
+source('01_functions/01_gong_rand_params.R')
 x<-lapply(1:Nsubj,function(s) {rand_params()})
 x<-do.call(rbind,x)
 
 
 #simulate data
-source('myfunc/01_gong_simme.R')
+source('02_models/01_gong_simme.R')
 
 df<-
   lapply(1:Nsubj,function(s) {
