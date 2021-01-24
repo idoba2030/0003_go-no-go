@@ -13,7 +13,7 @@ source('01_functions/convert_json_self_reports.R')
 
 mainfolder<-paste(getwd(),'/03_data/01_raw_data',sep="")
 subfolder <-dir(mainfolder)
-asrs<-wurs<-bis<-bisbas<-data.frame()
+df_starter<-df_questions<-df_task<-asrs<-wurs<-bis<-bisbas<-data.frame()
 
 print(length(subfolder))
 
@@ -25,11 +25,9 @@ for (i in 1:length(subfolder)){
   bis     <-con_sr_json('bis-',bis,curnfolder,files,i)
   bisbas  <-con_sr_json('bis_bas',bisbas,curnfolder,files,i)
   
-  df_task      <-con_gonogo_json('test',df,curnfolder,files,i)
-  df_task$outcome <- lapply(df_task$stim_fb,function(x) grepl('_r.png', x)*1)
-  df_questions <- con_gonogo_questions_json('test',df,curnfolder,files,i)
-  df_starter <- con_gonogo_starter_json('starter',df,curnfolder,files,i)
-  
+  df_starter <- con_gonogo_starter_json('starter',df_starter,curnfolder,files,i)
+  df_questions <- con_gonogo_questions_json('test',df_questions,curnfolder,files,i)
+  df_task      <-con_gonogo_json('test',df_task,curnfolder,files,i)
 }  
 
 
