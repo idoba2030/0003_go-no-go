@@ -89,7 +89,10 @@ gong_simme<-function(x,rndwlk,subj,experiment,Ntrls) {
                map1 = map1,
                map2 = map2,
                resp1 = resp1,
-               resp2 = resp2
+               resp2 = resp2,
+               gamma1 = gamma1[2],
+               gamma2 = gamma2[2]
+               
              ))
   }
   return(df)
