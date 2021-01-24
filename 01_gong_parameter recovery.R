@@ -9,7 +9,7 @@ source('01_functions/01_gong_functions.R')
 
 #rndwlk=readMat('myfiles/nspn_rndwlk_frcXstateXtrlXcounter.mat')[[1]]
 rndwlk=read.csv('rndwlk_v1.csv')
-Nsubj=25*2
+Nsubj=5*2
 Nexp =2
 Ntrls=1000
 
@@ -45,6 +45,7 @@ df2<-df2%>%
          stay2=(ch2==lag(ch2,default=1))*1)
 
 
+
 df_2 <-
   df2%>%
   filter(trl>1)%>%
@@ -54,8 +55,28 @@ df_2 <-
   colMeans()
 
   plot(df_2[2:9])
+  
+  df_3 <-
+    df2%>%
+    filter(trl>1)%>%
+    group_by(gamma1,resp1_oneback,resp2_oneback,rw_pv)%>%
+    summarise(pStay=mean(stay1))%>%
+    pivot_wider(names_from=c(resp1_oneback,resp2_oneback,rw_pv),values_from=pStay)%>%
+    colMeans()
+  
+  plot(df_3[2:9])
+  
+  df3= data.frame(matrix(0,20000,2)) 
+    df3[1] <-df2$gamma1
+    df3[2]<-df2$gamma2
 
+########
+  #corr between true params and model-agnostic effects
 
+  
+  
+  
+  
 #corr between true params and model-agnostic effects
 library(lme4)
 m<-glmer(stay1 ~ resp1_oneback*resp2_oneback*rw_pv + (resp1_oneback*resp2_oneback*rw_pv|subj),
