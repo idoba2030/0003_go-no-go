@@ -13,7 +13,7 @@ con_gonogo_questions_json<-function(task_name,datafile,curnfolder,files,subnum) 
     x <- fromJSON(fromJSON(file=paste(curnfolder,'/',files[grepl(task_name,files)],sep=""))$data)
     
     #prolific id
-    prolific_id <- fromJSON(file=paste(curnfolder,'/',files[grepl('starter',files)],sep=""))$`data[prolific-id]`
+    prolific_id <- fromJSON(file=paste(curnfolder,'/',files[grepl('starter',files)][1],sep=""))$`data[prolific-id]`
 
     i <-sapply(1:length(x), function(i) {(x[[i]]$trial_id=='post task questions')}) 
     df_questions<-
@@ -32,11 +32,8 @@ con_gonogo_questions_json<-function(task_name,datafile,curnfolder,files,subnum) 
     df_questions$comprehension<- temp[[1]][5]
     df_questions$misunderstanding<- temp[[1]][6]
     df_questions$strategy<- temp[[1]][7]
-    
-    
       
-    return(df_questions)
-    #return(rbind(datafile,df_1st))
+    return(rbind(datafile,df_questions))
   }
   else{
     return(datafile)
