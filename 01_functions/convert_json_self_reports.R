@@ -7,7 +7,8 @@
 
 con_sr_json<-function(sr_name,datafile,curnfolder,files,subnum) {
   temp<-as.data.frame(fromJSON(file = paste(curnfolder,'/',files[grepl(sr_name,files)],sep="")))
-  prolific_id<-temp[,grepl(c('prolificId'), colnames(temp))]
+  #prolific_id<-temp[,grepl(c('prolificId'), colnames(temp))]
+  prolific_id <- fromJSON(file=paste(curnfolder,'/',files[grepl('starter',files)][1],sep=""))$`data[prolific-id]`
   
   if (sum(grepl(sr_name,files))>0) {
     x <- as.data.frame(fromJSON(file = paste(curnfolder,'/',files[grepl(sr_name,files)],sep="")))
