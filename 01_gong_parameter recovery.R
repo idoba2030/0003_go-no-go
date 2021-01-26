@@ -9,8 +9,8 @@ source('01_functions/01_gong_functions.R')
 
 #rndwlk=readMat('myfiles/nspn_rndwlk_frcXstateXtrlXcounter.mat')[[1]]
 rndwlk=read.csv('rndwlk_v1.csv')
-Nsubj=5*2
-Nexp =2
+Nsubj=50*2
+Nexp =10
 Ntrls=1000
 
 #simulate parameters
@@ -44,6 +44,7 @@ df2<-df2%>%
          stay1=(ch1==lag(ch1,default=1))*1,
          stay2=(ch2==lag(ch2,default=1))*1)
 
+apply(df2, 2, function(x) any(is.na(x))) #are there any NA cells 
 
 
 df_2 <-
@@ -61,35 +62,39 @@ df_2 <-
     filter(trl>1)%>%
     group_by(gamma1,resp1_oneback,resp2_oneback,rw_pv)%>%
     summarise(pStay=mean(stay1))%>%
-    pivot_wider(names_from=c(resp1_oneback,resp2_oneback,rw_pv),values_from=pStay)%>%
-    colMeans()
-  
-  plot(df_3[2:9])
-  
-  df3= data.frame(matrix(0,20000,2)) 
-    df3[1] <-df2$gamma1
-    df3[2]<-df2$gamma2
+    pivot_wider(names_from=c(resp1_oneback,resp2_oneback,rw_pv),values_from=pStay)
 
-########
-  #corr between true params and model-agnostic effects
+#rewarded = 1 , punished= 0
+# GO = 1 , Nogo = 2 
+  
+    df_3_effect <- data.frame(
+      gamma1 <- df_3$gamma1,
+      reward_effect_first_resp_Go = df_3$'1_1_1'-df_3$'1_1_0',
+      reward_effect_first_resp_Nogo = df_3$'2_1_1'-df_3$'2_1_0',
+      reward_effect_second_resp = df_3$'1_1_1'-df_3$'1_1_0',
+      first_resp_rewarded = df_3$'1_1_1'-df_3$'2_1_1',
+      second_resp_rewarded = df_3$'1_1_1'-df_3$'1_2_1',
+      both_resp_rewarded = df_3$'1_1_1'-df_3$'2_2_1',
+      first_resp_unrewarded = df_3$'1_1_0'-df_3$'2_1_0',
+      second_resp_unrewarded = df_3$'1_1_0'-df_3$'1_2_0',
+      both_resp_unrewarded = df_3$'1_1_0'-df_3$'2_2_0'
+    )
 
-  
-  
-  
-  
-#corr between true params and model-agnostic effects
-library(lme4)
-m<-glmer(stay1 ~ resp1_oneback*resp2_oneback*rw_pv + (resp1_oneback*resp2_oneback*rw_pv|subj),
-      data=df2,family=binomial(link="logit"),nAGQ = 0)
+  x=  df_3_effect$gamma1
+  y=  df_3_effect$reward_effect_first_resp_Go
+  fit <- lm(y ~ x)   ## polynomial of degree 3
+  plot(x, y,xlab = 'gamma1',ylab = 'Reward effect size (first response)')  ## scatter plot (colour: black)
 
-library(gridExtra)
-grid.arrange(
-  plot(x[,'gamma1'],ranef(m)$subj[,'resp1_oneback:rw_pv']),
-  plot(x[,'gamma1'],ranef(m)$subj[,'resp2_oneback:rw_pv']),
-  plot(x[,'gamma2'],ranef(m)$subj[,'resp1_oneback:rw_pv']),
-  plot(x[,'gamma2'],ranef(m)$subj[,'resp2_oneback:rw_pv'])
-)
-
+  x0 <- seq(min(x), max(x), length = 100)  ## prediction grid
+  y0 <- predict.lm(fit, newdata = list(x = x0))  ## predicted values
+  lines(x0, y0, col = 2)  ## add regression curve (colour: red)
+  par(new=TRUE)
+  y=  df_3_effect$reward_effect_first_resp_Nogo
+  fit <- lm(y ~ x)   ## polynomial of degree 3
+  plot(x, y,xlab = 'gamma1',ylab = 'Reward effect size (first response)',col = 5)  ## scatter plot (colour: black)
+  y0 <- predict.lm(fit, newdata = list(x = x0))  ## predicted values
+  lines(x0, y0, col = 3)  ## add regression curve (colour: red)
+  
 
 # parameter recovery ------------------------------------------------------
 library(parallel)
@@ -136,11 +141,6 @@ mean(diag(cor(x,y2)))
 
 
 
-
-
-
-
-
 ####model agnostic
 apply(df[[3]], 2, function(x) any(is.na(x))) #are there ant NA cells 
 
@@ -164,12 +164,6 @@ df3
 df4<-colMeans(df3)
 df4
 plot(df4[2:9])
-
-
-
-
-
-
 
 
 ##################################################
@@ -224,6 +218,24 @@ paste("ME_act_s2 = ",ME_act_s2,"ME_act_s1 = ",ME_act_s1)
 
 df61
 plot(c(df61[1,3],df61[2,3],df61[3,1],df61[3,2]))
+
+
+########
+
+#corr between true params and model-agnostic effects
+library(lme4)
+m<-glmer(stay1 ~ resp1_oneback*resp2_oneback*rw_pv + (resp1_oneback*resp2_oneback*rw_pv|subj),
+         data=df2,family=binomial(link="logit"),nAGQ = 0)
+
+library(gridExtra)
+grid.arrange(
+  plot(x[,'gamma1'],ranef(m)$subj[,'resp1_oneback:rw_pv']),
+  plot(x[,'gamma1'],ranef(m)$subj[,'resp2_oneback:rw_pv']),
+  plot(x[,'gamma2'],ranef(m)$subj[,'resp1_oneback:rw_pv']),
+  plot(x[,'gamma2'],ranef(m)$subj[,'resp2_oneback:rw_pv'])
+)
+
+
 
 ###fit model----
 library(parallel)
