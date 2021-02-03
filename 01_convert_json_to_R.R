@@ -11,7 +11,7 @@ source('01_functions/convert_json_gonogo_questions.R')
 source('01_functions/convert_json_gonogo_starter.R')
 source('01_functions/convert_json_self_reports.R')
 
-mainfolder<-paste(getwd(),'/03_data/01_raw_data',sep="")
+mainfolder<-paste(getwd(),'/03_data/01_raw_data/final',sep="")
 subfolder <-dir(mainfolder)
 df_starter<-df_questions<-df_task<-asrs<-wurs<-bis<-bisbas<-data.frame()
 
@@ -30,6 +30,10 @@ for (i in 1:length(subfolder)){
   df_task      <-con_gonogo_json('test',df_task,curnfolder,files,i)
 }  
 
+wurs[,1:25]<-sapply(wurs[,1:25],function(v) {as.numeric(v)})
+asrs[,1:20]<-sapply(asrs[,1:20],function(v) {as.numeric(v)})
+bis[,1:30] <-sapply(bis[,1:30],function(v) {as.numeric(v)})
+bisbas[,1:24]<-sapply(bis[,1:24],function(v) {as.numeric(v)})
 
 save(wurs,file='03_data/02_aggregated_data/wurs_raw.Rdata')
 save(asrs,file='03_data/02_aggregated_data/asrs_raw.Rdata')
